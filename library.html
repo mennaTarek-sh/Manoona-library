@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manoona Global Library - Enterprise QA Hub</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0f19; color: #f1f5f9; margin: 0; padding: 0; display: flex; }
+        .sidebar { width: 260px; background: #111827; height: 100vh; padding: 30px 20px; border-right: 1px solid #1f2937; box-sizing: border-box; position: fixed; }
+        .sidebar h2 { color: #38bdf8; font-size: 20px; margin-bottom: 40px; text-align: center; }
+        .nav-btn { display: block; width: 100%; padding: 14px; background: none; border: none; color: #9ca3af; text-align: left; font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 8px; margin-bottom: 10px; }
+        .nav-btn.active, .nav-btn:hover { background: #1e293b; color: #38bdf8; border-left: 4px solid #38bdf8; }
+        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .search-container { display: flex; gap: 15px; margin-bottom: 30px; }
+        .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .book-card { background: #1f2937; border-radius: 12px; padding: 25px; border: 1px solid #374151; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .book-card h3 { margin: 0 0 10px 0; color: #38bdf8; font-size: 18px; }
+        .book-card p { margin: 5px 0; color: #9ca3af; font-size: 14px; }
+        .badge { display: inline-block; padding: 4px 8px; background: #1e3a8a; color: #60a5fa; border-radius: 6px; font-size: 12px; font-weight: bold; margin-top: 10px; }
+        .form-card { background: #1f2937; border-radius: 12px; padding: 35px; border: 1px solid #374151; max-width: 700px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #9ca3af; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; background: #111827; border: 1px solid #4b5563; border-radius: 8px; color: white; font-size: 16px; box-sizing: border-box; }
+        .btn { background: #0284c7; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn:hover { background: #0369a1; }
+        .log-panel { background: #05070c; border-radius: 10px; padding: 25px; border-left: 5px solid #ef4444; font-family: 'Courier New', Courier, monospace; min-height: 150px; }
+        .log-line { margin-bottom: 8px; font-size: 14px; }
+        .log-error { color: #f87171; }
+        .log-warn { color: #fbbf24; }
+        .success-banner { background: #065f46; color: #34d399; padding: 15px; border-radius: 8px; border: 1px solid #059669; text-align: center; font-weight: bold; margin-bottom: 25px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>📚 Manoona Hub</h2>
+        <button class="nav-btn active" onclick="switchTab('catalog-tab', this)">📖 Book Catalog</button>
+        <button class="nav-btn" onclick="switchTab('borrow-tab', this)">🔄 Borrow System</button>
+        <button class="nav-btn" onclick="switchTab('logs-tab', this)">⚙️ Live DB Logs</button>
+    </div>
+
+    <div class="main-content">
+        <div id="success-message" class="success-banner">✓ Request Processed Successfully! (Status 200 OK)</div>
+
+        <!-- TAB 1 -->
+        <div id="catalog-tab" class="tab-content active">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search books..." oninput="filterBooks()">
+                <select id="category-filter" onchange="filterBooks()">
+                    <option value="All">All Categories</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Business">Business</option>
+                </select>
+            </div>
+            <div class="books-grid" id="books-container"></div>
+        </div>
+
+        <!-- TAB 2 -->
+        <div id="borrow-tab" class="tab-content">
+            <div class="form-card">
+                <h2 style="margin-top:0; color:#38bdf8;">Request Book Borrowing</h2>
+                <div class="form-grid">
+                    <div>
+                        <label>Select Book:</label>
+                        <select id="borrow-book-select"></select>
+                    </div>
+                    <div>
+                        <label>Number of Copies:</label>
+                        <input type="number" id="borrow-copies" value="1">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div>
+                        <label>Borrow Date:</label>
+                        <input type="date" id="borrow-date">
+                    </div>
+                    <div>
+                        <label>Expected Return Date:</label>
+                        <input type="date" id="return-date">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div style="grid-column: span 2;">
+                        <label>Member ID (Max 5 Digits):</label>
+                        <input type="text" id="member-id" placeholder="e.g. 88541">
+                    </div>
+                </div>
+                <button class="btn" onclick="submitBorrowRequest()">Confirm Borrow Request</button>
+            </div>
+        </div>
+
+        <!-- TAB 3 -->
+        <div id="logs-tab" class="tab-content">
+            <h2 style="margin-top:0; color:#ef4444;">Core Serverless & Database Streams</h2>
+            <div class="log-panel" id="log-panel-container">
+                <div class="log-line" style="color:#64748b;">[SYSTEM] Cloud Watch initialized. Awaiting user events...</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const booksData = [
+        { id: 101, title: "Clean Code Handbook", category: "Technical", copies: 3 },
+        { id: 102, title: "The Pragmatic Programmer", category: "Technical", copies: 5 },
+        { id: 103, title: "Zero to One", category: "Business", copies: 4 },
+        { id: 104, title: "The Lean Startup", category: "Business", copies: 2 }
+    ];
+
+    function initializeApp() {
+        const container = document.getElementById('books-container');
+        const select = document.getElementById('borrow-book-select');
+        container.innerHTML = ''; select.innerHTML = '';
+        booksData.forEach(book => {
+            container.innerHTML += `
+                <div class="book-card" data-category="${book.category}" data-title="${book.title.toLowerCase()}">
+                    <h3>${book.title}</h3>
+                    <p>Book ID: <b>${book.id}</b></p>
+                    <p>Available Copies: <b>${book.copies}</b></p>
+                    <span class="badge">${book.category}</span>
+                </div>`;
+            select.innerHTML += `<option value="${book.id}">${book.title}</option>`;
+        });
+    }
+
+    function switchTab(tabId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.add('active');
+    }
+
+    function filterBooks() {
+        let query = document.getElementById('search-input').value;
+        let cat = document.getElementById('category-filter').value;
+        document.querySelectorAll('.book-card').forEach(card => {
+            let matchesSearch = card.getAttribute('data-title').includes(query);
+            let matchesCat = (cat === "All" || card.getAttribute('data-category') === cat);
+            card.style.display = (matchesSearch && matchesCat) ? "block" : "none";
+        });
+    }
+
+    function submitBorrowRequest() {
+        let copies = document.getElementById('borrow-copies').value;
+        let bDate = document.getElementById('borrow-date').value;
+        let rDate = document.getElementById('return-date').value;
+        let memberId = document.getElementById('member-id').value;
+
+        // Show banner only upon real button click event
+        document.getElementById('success-message').style.display = 'block';
+        const logPanel = document.getElementById('log-panel-container');
+
+        // Trigger Bug Logs inside Tab 3 dynamically
+        if(bDate && rDate && new Date(rDate) < new Date(bDate)) {
+            logPanel.innerHTML += `<div class="log-line log-error">[CRITICAL_LOGIC_ERR]: Return date (${rDate}) is prior to Borrow date (${bDate})! Cloud server accepted payload natively.</div>`;
+        }
+        if(memberId.length > 5) {
+            logPanel.innerHTML += `<div class="log-line log-warn">[DATA_WARN]: Member ID "${memberId}" exceeded VARCHAR(5) storage limit. Truncating data input behind the scenes.</div>`;
+        }
+        if(memberId === "999") {
+            console.error(" Uncaught TypeError: Cannot read properties of undefined (reading 'token_validation_key')");
+            logPanel.innerHTML += `<div class="log-line log-error">[FATAL_CORE_CRASH]: Uncaught TypeError inside authorization sequence at Row 999.</div>`;
+            alert("System Core Crash! Check Live DB Logs tab immediately.");
+        }
+    }
+    initializeApp();
+</script>
+</body>
+</html>
